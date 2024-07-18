@@ -35,5 +35,5 @@ class ModelTest(TestCase):
     def test_create_super_user(self):
         user = (get_user_model().objects
                 .create_superuser('test@example.com', 'test1234'))
-        self.assertTrue(user.is_super_user)
+        self.assertTrue(user.is_superuser)
         self.assertTrue(user.is_staff)
