@@ -5,9 +5,17 @@ from django.urls import reverse
 from decimal import Decimal
 from rest_framework import status
 from recipe.models import Recipe
-from recipe.serializers import RecipeSerializer
+from recipe.serializers import (
+    RecipeSerializer,
+    RecipeDetailSerializer
+)
 
 RECIPES_URL = reverse('recipe:recipe-list')
+
+
+def detail_url(recipe_id):
+    """ create and return a recipe url """
+    return reverse('recipe:recipe-detail', args=[recipe_id])
 
 
 def create_recipe(user, **params):
@@ -53,19 +61,25 @@ class TestPrivateRecipeAPI(TestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.data, serializer.data)
 
+    def test_retrieve_recipes_limited_to_user(self):
+        other_user = get_user_model().objects.create_user(
+            email='other@example.com',
+            password='other_password123'
+        )
 
-def test_retrieve_recipes_limited_to_user(self):
-    other_user = get_user_model().objects.create_user(
-        email='other@example.com',
-        password='other_password123'
-    )
+        create_recipe(other_user)
+        create_recipe(self.user)
 
-    create_recipe(other_user)
-    create_recipe(self.user)
+        res = self.client.get(RECIPES_URL)
+        recipes = Recipe.objects.all().filter(user=self.user)
+        serializer = RecipeSerializer(recipes, many=True)
 
-    res = self.client.get(RECIPES_URL)
-    recipes = Recipe.objects.all().filter(user=self.user)
-    serializer = RecipeSerializer(recipes, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.data, serializer.data)
 
-    self.assertEqual(res.status_code, status.HTTP_200_OK)
-    self.assertEqual(res.data, serializer.data)
+    def test_recipe_detail(self):
+        recipe = create_recipe(self.user)
+        url = detail_url(recipe.id)
+        res = self.client.get(url)
+        serializer = RecipeDetailSerializer(recipe)
+        self.assertEqual(res.data, serializer.data)
