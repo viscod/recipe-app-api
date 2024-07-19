@@ -17,3 +17,7 @@ migrate:
 .PHONY: superuser
 superuser:
 	docker compose run --rm app sh -c "python manage.py createsuperuser"
+
+.PHONY: app
+app:
+	docker compose run --rm app sh -c "python manage.py startapp ${APP}"
